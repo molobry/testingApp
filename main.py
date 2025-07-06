@@ -34,7 +34,7 @@ def main():
     parser.add_argument("feature_file", help="Path to the Cucumber feature file")
     parser.add_argument("--headless", action="store_true", help="Run browser in headless mode")
     parser.add_argument("--browser", choices=["chromium", "firefox", "webkit"], default="chromium", help="Browser type")
-    parser.add_argument("--ai-provider", choices=["openai", "anthropic"], help="AI provider to use")
+    parser.add_argument("--ai-provider", choices=["openai", "azure_openai", "anthropic"], help="AI provider to use")
     parser.add_argument("--log-level", choices=["DEBUG", "INFO", "WARNING", "ERROR"], default="INFO", help="Log level")
     
     args = parser.parse_args()
@@ -65,6 +65,16 @@ def main():
     if settings.ai_provider == "openai" and not settings.openai_api_key:
         logger.error("OpenAI API key not configured. Set OPENAI_API_KEY environment variable.")
         sys.exit(1)
+    elif settings.ai_provider == "azure_openai":
+        if not settings.azure_openai_api_key:
+            logger.error("Azure OpenAI API key not configured. Set AZURE_OPENAI_API_KEY environment variable.")
+            sys.exit(1)
+        if not settings.azure_openai_endpoint:
+            logger.error("Azure OpenAI endpoint not configured. Set AZURE_OPENAI_ENDPOINT environment variable.")
+            sys.exit(1)
+        if not settings.azure_openai_deployment:
+            logger.error("Azure OpenAI deployment not configured. Set AZURE_OPENAI_DEPLOYMENT environment variable.")
+            sys.exit(1)
     elif settings.ai_provider == "anthropic" and not settings.anthropic_api_key:
         logger.error("Anthropic API key not configured. Set ANTHROPIC_API_KEY environment variable.")
         sys.exit(1)
