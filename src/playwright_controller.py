@@ -4,6 +4,9 @@ Playwright controller for page navigation and element interactions
 from typing import Optional, Dict, Any, List
 from playwright.sync_api import sync_playwright, Browser, BrowserContext, Page
 from loguru import logger
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import settings
 
 

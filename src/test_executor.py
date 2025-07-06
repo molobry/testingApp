@@ -6,6 +6,10 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from loguru import logger
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from cucumber_parser import CucumberParser, TestScenario, TestStep
 from ai_client import AIElementDetector
 from playwright_controller import PlaywrightController
