@@ -119,3 +119,29 @@ Cache Hits: 15
 AI Calls: 3
 Total Execution Time: 45.2s
 ```
+
+## Next Steps
+
+**After installation, follow these steps to get the application running:**
+
+1. **Install browser dependencies:**
+   ```bash
+   sudo playwright install-deps
+   ```
+
+2. **Configure your Azure OpenAI credentials in `.env`:**
+   ```bash
+   cp .env.example .env
+   # Edit .env file with your actual Azure OpenAI settings:
+   # - AZURE_OPENAI_ENDPOINT
+   # - AZURE_OPENAI_API_KEY  
+   # - AZURE_OPENAI_DEPLOYMENT
+   ```
+
+3. **Run tests:**
+   ```bash
+   source venv/bin/activate
+   python main.py examples/sample.feature
+   ```
+
+The application is now stable and ready for production use!
