@@ -26,8 +26,84 @@ class OpenAIClient(AIClient):
     """OpenAI client for element detection"""
     
     def __init__(self, api_key: str, model: str = "gpt-4"):
-        self.client = openai.OpenAI(api_key=api_key)
+        # Initialize OpenAI client with explicit parameters to avoid proxy issues
+        self.client = openai.OpenAI(
+            api_key=api_key,
+            timeout=60.0
+        )
         self.model = model
+    
+    def analyze_dom(self, html_content: str, element_description: str, url: str) -> Dict[str, Any]:
+        """Analyze DOM using OpenAI to find element selector"""
+        
+        system_prompt = """You are an expert at analyzing HTML DOM and finding element selectors.
+Given HTML content and an element description, find the best XPath or CSS selector for that element.
+
+Rules:
+1. Prefer XPath selectors over CSS selectors
+2. Use text-based selectors when possible (e.g., //button[text()='Submit'])
+3. Avoid fragile selectors like absolute paths or index-based selectors
+4. Return multiple selector options ranked by reliability
+5. Include confidence score (0-1) for each selector
+
+Return JSON format:
+{
+    "selectors": [
+        {
+            "selector": "//button[text()='Submit']",
+            "type": "xpath",
+            "confidence": 0.9,
+            "reasoning": "Direct text match for button"
+        }
+    ],
+    "best_selector": "//button[text()='Submit']",
+    "success": true,
+    "error": null
+}"""
+
+        user_prompt = f"""
+HTML Content:
+{html_content[:8000]}  # Limit HTML to avoid token limits
+
+Element to find: "{element_description}"
+URL: {url}
+
+Find the best selector for this element. Focus on the most reliable approach.
+"""
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.1,
+                max_tokens=1000
+            )
+            
+            content = response.choices[0].message.content
+            result = json.loads(content)
+            
+            logger.info(f"OpenAI analysis completed for: {element_description}")
+            return result
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse OpenAI response: {e}")
+            return {
+                "selectors": [],
+                "best_selector": None,
+                "success": False,
+                "error": f"JSON parse error: {str(e)}"
+            }
+        except Exception as e:
+            logger.error(f"OpenAI API error: {e}")
+            return {
+                "selectors": [],
+                "best_selector": None,
+                "success": False,
+                "error": str(e)
+            }
 
 
 class AzureOpenAIClient(AIClient):
@@ -106,78 +182,6 @@ Find the best selector for this element. Focus on the most reliable approach.
             }
         except Exception as e:
             logger.error(f"Azure OpenAI API error: {e}")
-            return {
-                "selectors": [],
-                "best_selector": None,
-                "success": False,
-                "error": str(e)
-            }
-    
-    def analyze_dom(self, html_content: str, element_description: str, url: str) -> Dict[str, Any]:
-        """Analyze DOM using OpenAI to find element selector"""
-        
-        system_prompt = """You are an expert at analyzing HTML DOM and finding element selectors.
-Given HTML content and an element description, find the best XPath or CSS selector for that element.
-
-Rules:
-1. Prefer XPath selectors over CSS selectors
-2. Use text-based selectors when possible (e.g., //button[text()='Submit'])
-3. Avoid fragile selectors like absolute paths or index-based selectors
-4. Return multiple selector options ranked by reliability
-5. Include confidence score (0-1) for each selector
-
-Return JSON format:
-{
-    "selectors": [
-        {
-            "selector": "//button[text()='Submit']",
-            "type": "xpath",
-            "confidence": 0.9,
-            "reasoning": "Direct text match for button"
-        }
-    ],
-    "best_selector": "//button[text()='Submit']",
-    "success": true,
-    "error": null
-}"""
-
-        user_prompt = f"""
-HTML Content:
-{html_content[:8000]}  # Limit HTML to avoid token limits
-
-Element to find: "{element_description}"
-URL: {url}
-
-Find the best selector for this element. Focus on the most reliable approach.
-"""
-
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.1,
-                max_tokens=1000
-            )
-            
-            content = response.choices[0].message.content
-            result = json.loads(content)
-            
-            logger.info(f"OpenAI analysis completed for: {element_description}")
-            return result
-            
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse OpenAI response: {e}")
-            return {
-                "selectors": [],
-                "best_selector": None,
-                "success": False,
-                "error": f"JSON parse error: {str(e)}"
-            }
-        except Exception as e:
-            logger.error(f"OpenAI API error: {e}")
             return {
                 "selectors": [],
                 "best_selector": None,
